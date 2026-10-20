@@ -58,15 +58,27 @@ supabase.auth.onAuthStateChange((event, session) => {
 });
 
 const $period = () => $('#periodFilter');
-function active() { let period=$period().value; return records.filter(r=>period==='all'||(r.date||'').slice(0,7)===period); }
+const filterFields=[['schoolFilter','school','Todas as escolas'],['gradeFilter','grade','Todos os anos/séries'],['subjectFilter','subject','Todos os componentes'],['examFilter','exam','Todos os simulados'],['classFilter','classroom','Todas as turmas']];
+function active() {
+  let period=$period().value;
+  return records.filter(r=>(period==='all'||(r.date||'').slice(0,7)===period)&&filterFields.every(([id,key])=>{let value=$(`#${id}`).value;return value==='all'||String(r[key]??'')===value;}));
+}
 function renderPeriod() {
   let el=$period(), selected=el.value;
   let months=[...new Set(records.map(r=>(r.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
   el.innerHTML='<option value="all">Todas as aplicações</option>'+months.map(m=>{let [y,mo]=m.split('-');return `<option value="${m}">${new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'}).format(new Date(+y,+mo-1,1))}</option>`}).join('');
   el.value=months.includes(selected)?selected:'all';
 }
+function renderFilters() {
+  for(const [id,key,placeholder] of filterFields){
+    const el=$(`#${id}`),selected=el.value;
+    const values=[...new Set(records.map(r=>String(r[key]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{sensitivity:'base'}));
+    el.innerHTML=`<option value="all">${placeholder}</option>`+values.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('');
+    el.value=values.includes(selected)?selected:'all';
+  }
+}
 function render() {
-  renderPeriod(); let data=active(); $('#side-count').textContent=records.length;
+  renderPeriod(); renderFilters(); let data=active(); $('#side-count').textContent=records.length;
   let schools=new Set(data.map(r=>r.school.trim().toLowerCase()).filter(Boolean)).size;
   let enrolled=data.reduce((s,r)=>s+n(r.enrolled),0),present=data.reduce((s,r)=>s+n(r.present),0);
   let avgValues=data.filter(r=>r.average!==''&&r.average!=null).map(r=>n(r.average));
@@ -97,7 +109,8 @@ function renderRecent(data) {
 }
 function renderRecords() {
   let q=($('#searchInput')?.value||'').toLowerCase();
-  let data=[...active()].filter(r=>[r.school,r.classroom,r.subject,r.grade,r.exam,r.responsible].join(' ').toLowerCase().includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  let period=$period().value;
+  let data=records.filter(r=>period==='all'||(r.date||'').slice(0,7)===period).filter(r=>[r.school,r.classroom,r.subject,r.grade,r.exam,r.responsible].join(' ').toLowerCase().includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   $('#recordTotal').textContent=`${data.length} ${data.length===1?'registro':'registros'}`;
   $('#recordsBody').innerHTML=data.map(r=>{let canEdit=isAdmin||r.createdBy===currentUser?.id;return `<tr><td>${esc(r.school)}<small>Turma ${esc(r.classroom)} · ${dateLabel(r.date)}${isAdmin?` · Registrado por ${esc(r.responsible||'—')}`:''}</small></td><td>${esc(r.exam||'—')}</td><td>${esc(r.grade||'—')}</td><td>${esc(r.subject||'—')}</td><td>${fmt(n(r.present))} / ${fmt(n(r.enrolled))}</td><td><span class="attendance-pill">${r.enrolled?pct(n(r.present)/n(r.enrolled)*100):'—'}</span></td><td><span class="score-pill">${pct(n(r.average))}</span></td><td class="action-cell">${canEdit?`<button title="Editar" data-edit="${r.id}">✎</button><button title="Excluir" data-delete="${r.id}">×</button>`:'<span class="muted">Somente leitura</span>'}</td></tr>`}).join('');
   $('#emptyRecords').classList.toggle('hidden',data.length>0);
@@ -185,7 +198,9 @@ $$('.nav').forEach(b=>b.addEventListener('click',()=>b.dataset.view==='collectio
 ['#newBtn','#newBtn2','#recordsNew'].forEach(s=>$(s).addEventListener('click',()=>newForm()));
 ['#cancelForm','#cancelForm2'].forEach(s=>$(s).addEventListener('click',()=>navigate('dashboard')));
 $('#exportBtn').addEventListener('click',csv); $('#downloadBtn').addEventListener('click',csv);
-$period().addEventListener('change',render); $('#searchInput').addEventListener('input',renderRecords);
+$period().addEventListener('change',render); filterFields.forEach(([id])=>$(`#${id}`).addEventListener('change',render));
+$('#clearFilters').addEventListener('click',()=>{$period().value='all';filterFields.forEach(([id])=>$(`#${id}`).value='all');render();});
+$('#searchInput').addEventListener('input',renderRecords);
 $$('[data-goto]').forEach(b=>b.addEventListener('click',()=>navigate('records')));
 $('#importBtn').addEventListener('click',()=>$('#importCsv').click());
 $('#importCsv').addEventListener('change',async e=>{let file=e.target.files?.[0];if(!file)return;try{await importCsv(file);}catch(err){toast(`Falha na importação: ${err.message}`);}finally{e.target.value='';}});

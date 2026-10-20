@@ -5,7 +5,7 @@
   <meta name="theme-color" content="#f5f7fa"><title>URE Sumaré · Simulados</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="auth.css"><link rel="stylesheet" href="dashboard-filters.css">
 </head>
 <body>
   <section id="authScreen" class="auth-screen">
@@ -32,6 +32,7 @@
     <section id="dashboardView" class="view">
       <div class="welcome"><div><div class="eyebrow">ACOMPANHAMENTO PEDAGÓGICO <span class="live-dot"></span> ATUALIZADO AGORA</div><h1>Resultados dos simulados</h1><p>Acompanhe participação e aprendizagem das escolas da região.</p></div><div class="welcome-actions"><button class="secondary" id="downloadBtn">⇩ &nbsp; Exportar dados</button><button class="primary" id="newBtn2">＋ &nbsp; Registrar resultado</button></div></div>
       <div class="notice"><span>ⓘ</span><div><b>Visão regional</b><p>Os indicadores refletem as coletas registradas. Registre uma linha por escola, turma, ano/série, componente e aplicação.</p></div><button id="dismissNotice">×</button></div>
+      <div class="dashboard-filters panel"><div class="filters-heading"><span class="filter-symbol">☷</span><b>Filtros</b><button id="clearFilters" class="clear-filters">Limpar filtros</button></div><label>Escola<select id="schoolFilter"><option value="all">Todas as escolas</option></select></label><label>Ano/Série<select id="gradeFilter"><option value="all">Todos os anos/séries</option></select></label><label>Componente<select id="subjectFilter"><option value="all">Todos os componentes</option></select></label><label>Simulado<select id="examFilter"><option value="all">Todos os simulados</option></select></label><label>Turma<select id="classFilter"><option value="all">Todas as turmas</option></select></label></div>
       <div class="kpis">
         <article class="kpi"><div class="kpi-top"><span>ESCOLAS COM REGISTROS</span><span class="kpi-icon blue">⌂</span></div><div class="kpi-value" id="kSchools">0</div><div class="kpi-foot"><span class="muted">no período selecionado</span></div></article>
         <article class="kpi"><div class="kpi-top"><span>ESTUDANTES PRESENTES</span><span class="kpi-icon green">♙</span></div><div class="kpi-value" id="kPresent">0</div><div class="kpi-foot"><span class="muted">de <b id="kEnrolled">0</b> matriculados</span></div></article>

@@ -7,6 +7,7 @@ Aplicação web responsiva baseada na pasta `Formulario_Coleta_Resultados_Simula
 - Login por e-mail e senha institucional e redefinição de senha por e-mail.
 - Cadastro compartilhado de resultados no Supabase, com cálculos de ausências e participação.
 - Dashboard regional, filtros por período, busca e exportação CSV.
+- Filtros combináveis no dashboard por escola, ano/série, componente curricular, identificação do simulado e turma; os indicadores e gráficos são recalculados em conjunto.
 - Importação do CSV exportado pelo protótipo anterior para transferir registros locais para a base compartilhada.
 - Leitura regional para usuários autorizados; edição e exclusão apenas pelo autor do registro, aplicadas também no banco por Row Level Security (RLS).
 - Nenhum nome ou identificador de estudante é solicitado.
