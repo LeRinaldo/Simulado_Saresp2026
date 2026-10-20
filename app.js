@@ -5,7 +5,7 @@ const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_VCAbdq3tHOPJyeAoSLIr6Q_Ow5-cBPS
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const legacyKey = 'ure-sumare-simulados-v1';
-let records = [], editing = null, currentUser = null, recoveryMode = false;
+let records = [], editing = null, currentUser = null, recoveryMode = false, isAdmin = false;
 
 function esc(v = '') { return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function n(v) { if (typeof v === 'string' && v.includes(',')) v = v.replace(/\./g,'').replace(',','.'); return Number(v) || 0; }
@@ -28,7 +28,7 @@ async function refreshRecords() {
   records = all.map(toRecord); render();
 }
 function showAuth(message = '') {
-  currentUser = null; records = [];
+  currentUser = null; isAdmin = false; records = [];
   $('#appShell').classList.add('hidden'); $('#authScreen').classList.remove('hidden');
   if (!recoveryMode) { $('#loginForm').classList.remove('hidden'); $('#resetPanel').classList.add('hidden'); }
   $('#authError').textContent = message;
@@ -39,7 +39,12 @@ async function handleSession(session) {
   if (!allowedDomain(session.user.email || '')) {
     await supabase.auth.signOut(); showAuth('Este e-mail não pertence a um domínio institucional autorizado.'); return;
   }
-  currentUser = session.user; $('#profileEmail').textContent = currentUser.email || 'Conta institucional';
+  currentUser = session.user;
+  const {data:roleRow,error:roleError}=await supabase.from('user_roles').select('role').eq('user_id',currentUser.id).maybeSingle();
+  if(roleError){showAuth(`Não foi possível verificar o perfil da conta: ${roleError.message}`);return;}
+  isAdmin=roleRow?.role==='admin';
+  $('#profileRole').textContent=isAdmin?'Administrador':'Usuário';
+  $('#profileEmail').textContent = currentUser.email || 'Conta institucional';
   $('#authScreen').classList.add('hidden'); $('#appShell').classList.remove('hidden');
   try { await refreshRecords(); }
   catch (error) { toast(`Não foi possível carregar os registros: ${error.message}`); }
@@ -92,9 +97,9 @@ function renderRecent(data) {
 }
 function renderRecords() {
   let q=($('#searchInput')?.value||'').toLowerCase();
-  let data=[...active()].filter(r=>[r.school,r.classroom,r.subject,r.grade,r.exam].join(' ').toLowerCase().includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  let data=[...active()].filter(r=>[r.school,r.classroom,r.subject,r.grade,r.exam,r.responsible].join(' ').toLowerCase().includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   $('#recordTotal').textContent=`${data.length} ${data.length===1?'registro':'registros'}`;
-  $('#recordsBody').innerHTML=data.map(r=>{let canEdit=r.createdBy===currentUser?.id;return `<tr><td>${esc(r.school)}<small>Turma ${esc(r.classroom)} · ${dateLabel(r.date)}</small></td><td>${esc(r.exam||'—')}</td><td>${esc(r.grade||'—')}</td><td>${esc(r.subject||'—')}</td><td>${fmt(n(r.present))} / ${fmt(n(r.enrolled))}</td><td><span class="attendance-pill">${r.enrolled?pct(n(r.present)/n(r.enrolled)*100):'—'}</span></td><td><span class="score-pill">${pct(n(r.average))}</span></td><td class="action-cell">${canEdit?`<button title="Editar" data-edit="${r.id}">✎</button><button title="Excluir" data-delete="${r.id}">×</button>`:'<span class="muted">Somente leitura</span>'}</td></tr>`}).join('');
+  $('#recordsBody').innerHTML=data.map(r=>{let canEdit=isAdmin||r.createdBy===currentUser?.id;return `<tr><td>${esc(r.school)}<small>Turma ${esc(r.classroom)} · ${dateLabel(r.date)}${isAdmin?` · Registrado por ${esc(r.responsible||'—')}`:''}</small></td><td>${esc(r.exam||'—')}</td><td>${esc(r.grade||'—')}</td><td>${esc(r.subject||'—')}</td><td>${fmt(n(r.present))} / ${fmt(n(r.enrolled))}</td><td><span class="attendance-pill">${r.enrolled?pct(n(r.present)/n(r.enrolled)*100):'—'}</span></td><td><span class="score-pill">${pct(n(r.average))}</span></td><td class="action-cell">${canEdit?`<button title="Editar" data-edit="${r.id}">✎</button><button title="Excluir" data-delete="${r.id}">×</button>`:'<span class="muted">Somente leitura</span>'}</td></tr>`}).join('');
   $('#emptyRecords').classList.toggle('hidden',data.length>0);
 }
 function navigate(view) {
@@ -123,8 +128,10 @@ $('#recordForm').addEventListener('submit',async e=>{
   if(n(d.present)>n(d.enrolled)){toast('Presentes não pode exceder matriculados.');return;}
   let sums=['below50','range50_70','range70_90','range90_100'].reduce((s,k)=>s+n(d[k]),0);
   if(sums&&sums!==n(d.present)&&!confirm(`As faixas somam ${sums}, mas há ${d.present} presentes. Deseja salvar mesmo assim?`))return;
-  const payload={...toRow(d),created_by:currentUser.id};
-  const {error}=editing?await supabase.from('simulado_results').update(payload).eq('id',editing):await supabase.from('simulado_results').insert(payload);
+  const payload=toRow(d);
+  const {error}=editing
+    ?await supabase.from('simulado_results').update(payload).eq('id',editing)
+    :await supabase.from('simulado_results').insert({...payload,created_by:currentUser.id});
   if(error){toast(`Não foi possível salvar: ${error.message}`);return;}
   try{await refreshRecords();}catch(err){toast(`Salvo, mas falhou a atualização: ${err.message}`);}
   navigate('dashboard'); toast(editing?'Coleta atualizada.':'Coleta salva para toda a URE.'); editing=null;
