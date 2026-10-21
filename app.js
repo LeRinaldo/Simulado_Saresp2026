@@ -91,7 +91,7 @@ function render() {
   renderGrade(data); renderSubjects(data); renderRanges(data); renderRecent(data); renderRecords();
 }
 function renderGrade(data) {
-  let grades=[['5º Ano EF','5º EF'],['6º Ano EF','6º EF'],['7º Ano EF','7º EF'],['8º Ano EF','8º EF'],['9º Ano EF','9º EF'],['1ª Série EM','1ª EM'],['2ª Série EM','2ª EM'],['3ª Série EM','3ª EM']];
+  let grades=[['5º Ano EF','5º EF'],['6º Ano EF','6º EF'],['7º Ano EF','7º EF'],['8º Ano EF','8º EF'],['9º Ano EF','9º EF'],['1ª Série EM','1ª EM'],['2ª Série EM','2ª EM']];
   $('#gradeChart').innerHTML=grades.map(([g,label])=>{let rows=data.filter(r=>r.grade===g),e=rows.reduce((a,r)=>a+n(r.enrolled),0),p=rows.reduce((a,r)=>a+n(r.present),0),v=e?p/e*100:0;return `<div class="bar-group"><div class="bar" style="height:${Math.max(v,1)}%"><span class="bar-value">${rows.length?pct(v):'—'}</span></div><span class="bar-label">${label}</span></div>`}).join('');
 }
 function renderSubjects(data) {
@@ -100,7 +100,7 @@ function renderSubjects(data) {
   $('#subjectChart').innerHTML=rows.length?rows.map(x=>`<div class="subject-row"><span class="subject-name" title="${esc(x.name)}">${esc(x.name)}</span><div class="track"><div class="fill" style="width:${Math.max(0,Math.min(100,x.v))}%"></div></div><span class="subject-score">${pct(x.v)}</span></div>`).join(''):'<div class="empty"><p>Ainda não há médias por componente.</p></div>';
 }
 function renderRanges(data) {
-  let labels=['Abaixo de 50%','50% a &lt;70%','70% a &lt;90%','90% a 100%'],keys=['below50','range50_70','range70_90','range90_100'],colors=['r1','r2','r3','r4'],values=keys.map(k=>data.reduce((s,r)=>s+n(r[k]),0)),total=values.reduce((a,b)=>a+b,0);
+  let labels=['Abaixo de 50%','50% a 69,9%','70% a 79,9%','80% a 100%'],keys=['below50','range50_70','range70_90','range90_100'],colors=['r1','r2','r3','r4'],values=keys.map(k=>data.reduce((s,r)=>s+n(r[k]),0)),total=values.reduce((a,b)=>a+b,0);
   $('#rangeChart').innerHTML=total?`<div class="range-chart">${values.map((v,i)=>`<div class="range-segment ${colors[i]}" style="width:${v/total*100}%" title="${labels[i].replace('&lt;','<')}: ${fmt(v)}"></div>`).join('')}</div><div class="range-labels">${values.map((v,i)=>`<div class="range-item"><i class="${colors[i]}"></i>${labels[i]}<b>${fmt(v)}</b></div>`).join('')}</div>`:'<div class="range-chart"></div><div class="range-labels">'+values.map((v,i)=>`<div class="range-item"><i class="${colors[i]}"></i>${labels[i]}<b>0</b></div>`).join('')+'</div>';
 }
 function renderRecent(data) {
@@ -150,7 +150,7 @@ $('#recordForm').addEventListener('submit',async e=>{
   navigate('dashboard'); toast(editing?'Coleta atualizada.':'Coleta salva para toda a URE.'); editing=null;
 });
 
-const csvHeaders=['Data do simulado','Responsável pelo preenchimento','Escola','Identificação do simulado','Ano/Série','Turma','Componente curricular','Formato','Nº de questões','Estudantes matriculados','Estudantes presentes','Estudantes ausentes','Taxa de participação (%)','Média de acertos (%)','Estudantes abaixo de 50%','Estudantes de 50% a <70%','Estudantes de 70% a <90%','Estudantes de 90% a 100%','Habilidades/conteúdos com melhores resultados','Habilidades/conteúdos com maiores dificuldades','Análise por questão/habilidade realizada?','Fatores associados às dificuldades','Ações pedagógicas previstas','Responsável pelas ações','Observações'];
+const csvHeaders=['Data do simulado','Responsável pelo preenchimento','Escola','Identificação do simulado','Ano/Série','Turma','Componente curricular','Formato','Nº de questões','Estudantes matriculados','Estudantes presentes','Estudantes ausentes','Taxa de participação (%)','Média de acertos (%)','Estudantes abaixo de 50%','Estudantes de 50% a 69,9%','Estudantes de 70% a 79,9%','Estudantes de 80% a 100%','Habilidades/conteúdos com melhores resultados','Habilidades/conteúdos com maiores dificuldades','Análise por questão/habilidade realizada?','Fatores associados às dificuldades','Ações pedagógicas previstas','Responsável pelas ações','Observações'];
 const csvKeys=['date','responsible','school','exam','grade','classroom','subject','format','questions','enrolled','present','absent','attendance','average','below50','range50_70','range70_90','range90_100','strengths','needs','analysis','factors','actions','actionOwner','notes'];
 function csv() {
   if(!records.length){toast('Ainda não há registros para exportar.');return;}

@@ -16,13 +16,13 @@ Aplicação web responsiva baseada na pasta `Formulario_Coleta_Resultados_Simula
 
 Não há cadastro público. O administrador da organização deve criar ou convidar cada profissional no Supabase Dashboard em **Authentication → Users** e configurar a senha ou o convite enviado ao e-mail. As políticas do projeto autorizam e-mails dos domínios `educacao.sp.gov.br`, `professor.educacao.sp.gov.br` e `fde.sp.gov.br`.
 
-Contas sem papel especial veem e alteram somente os próprios registros. A função de administrador é atribuída a uma conta existente na tabela `public.user_roles`; essa tabela não permite que usuários promovam a si mesmos. Depois de você informar o e-mail institucional que será o administrador, associe-o no Supabase SQL Editor com:
+Contas sem papel especial veem e alteram somente os próprios registros. A função de administrador é atribuída a uma conta existente na tabela `public.user_roles`; essa tabela não permite que usuários promovam a si mesmos. Para conceder o papel de administrador à conta `leonardo.rinaldo@educacao.sp.gov.br`, associe-a no Supabase SQL Editor com:
 
 ```sql
 insert into public.user_roles (user_id, role)
 select id, 'admin'
 from auth.users
-where lower(email) = lower('EMAIL_INSTITUCIONAL_DO_ADMIN')
+where lower(email) = lower('leonardo.rinaldo@educacao.sp.gov.br')
 on conflict (user_id) do update set role = excluded.role;
 ```
 
