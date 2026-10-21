@@ -91,11 +91,11 @@ function render() {
   renderGrade(data); renderSubjects(data); renderRanges(data); renderRecent(data); renderRecords();
 }
 function renderGrade(data) {
-  let grades=[['5º Ano EF','5º EF'],['6º Ano EF','6º EF'],['9º Ano EF','9º EF'],['1ª Série EM','1ª EM'],['2ª Série EM','2ª EM']];
+  let grades=[['5º Ano EF','5º EF'],['6º Ano EF','6º EF'],['7º Ano EF','7º EF'],['8º Ano EF','8º EF'],['9º Ano EF','9º EF'],['1ª Série EM','1ª EM'],['2ª Série EM','2ª EM'],['3ª Série EM','3ª EM']];
   $('#gradeChart').innerHTML=grades.map(([g,label])=>{let rows=data.filter(r=>r.grade===g),e=rows.reduce((a,r)=>a+n(r.enrolled),0),p=rows.reduce((a,r)=>a+n(r.present),0),v=e?p/e*100:0;return `<div class="bar-group"><div class="bar" style="height:${Math.max(v,1)}%"><span class="bar-value">${rows.length?pct(v):'—'}</span></div><span class="bar-label">${label}</span></div>`}).join('');
 }
 function renderSubjects(data) {
-  let names=['Língua Portuguesa','Matemática','Ciências','História','Geografia','Outro'];
+  let names=['Língua Portuguesa','Inglês','Matemática','Ciências','Biologia','Física','Química','História','Geografia','Filosofia','Sociologia','Outro'];
   let rows=names.map(name=>{let a=data.filter(r=>r.subject===name&&r.average!==''&&r.average!=null),v=a.length?a.reduce((s,r)=>s+n(r.average),0)/a.length:null;return {name,v,count:a.length}}).filter(x=>x.count).sort((a,b)=>b.v-a.v);
   $('#subjectChart').innerHTML=rows.length?rows.map(x=>`<div class="subject-row"><span class="subject-name" title="${esc(x.name)}">${esc(x.name)}</span><div class="track"><div class="fill" style="width:${Math.max(0,Math.min(100,x.v))}%"></div></div><span class="subject-score">${pct(x.v)}</span></div>`).join(''):'<div class="empty"><p>Ainda não há médias por componente.</p></div>';
 }
