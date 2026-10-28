@@ -49,6 +49,12 @@ async function handleSession(session) {
   try { await refreshRecords(); }
   catch (error) { toast(`Não foi possível carregar os registros: ${error.message}`); }
 }
+window.addEventListener('focus', async () => {
+  if (!currentUser || recoveryMode) return;
+  const {data:{session},error}=await supabase.auth.getSession();
+  if(error){toast(`Não foi possível atualizar a sessão: ${error.message}`);return;}
+  if(session?.user?.id===currentUser.id) await handleSession(session);
+});
 supabase.auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
     recoveryMode = true; $('#loginForm').classList.add('hidden'); $('#resetPanel').classList.remove('hidden');
@@ -110,7 +116,8 @@ function renderRecent(data) {
 function renderRecords() {
   let q=($('#searchInput')?.value||'').toLowerCase();
   let period=$period().value;
-  let data=records.filter(r=>period==='all'||(r.date||'').slice(0,7)===period).filter(r=>[r.school,r.classroom,r.subject,r.grade,r.exam,r.responsible].join(' ').toLowerCase().includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  let collator=new Intl.Collator('pt-BR',{sensitivity:'base'});
+  let data=records.filter(r=>period==='all'||(r.date||'').slice(0,7)===period).filter(r=>[r.school,r.classroom,r.subject,r.grade,r.exam,r.responsible].join(' ').toLowerCase().includes(q)).sort((a,b)=>collator.compare(a.school||'',b.school||'')||collator.compare(a.classroom||'',b.classroom||'')||collator.compare(a.grade||'',b.grade||'')||collator.compare(a.subject||'',b.subject||''));
   $('#recordTotal').textContent=`${data.length} ${data.length===1?'registro':'registros'}`;
   $('#recordsBody').innerHTML=data.map(r=>{let canEdit=isAdmin||r.createdBy===currentUser?.id;return `<tr><td>${esc(r.school)}<small>Turma ${esc(r.classroom)} · ${dateLabel(r.date)}${isAdmin?` · Registrado por ${esc(r.responsible||'—')}`:''}</small></td><td>${esc(r.exam||'—')}</td><td>${esc(r.grade||'—')}</td><td>${esc(r.subject||'—')}</td><td>${fmt(n(r.present))} / ${fmt(n(r.enrolled))}</td><td><span class="attendance-pill">${r.enrolled?pct(n(r.present)/n(r.enrolled)*100):'—'}</span></td><td><span class="score-pill">${pct(n(r.average))}</span></td><td class="action-cell">${canEdit?`<button title="Editar" data-edit="${r.id}">✎</button><button title="Excluir" data-delete="${r.id}">×</button>`:'<span class="muted">Somente leitura</span>'}</td></tr>`}).join('');
   $('#emptyRecords').classList.toggle('hidden',data.length>0);
